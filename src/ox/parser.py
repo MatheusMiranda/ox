@@ -1,6 +1,6 @@
 from collections import Counter
 
-from sidekick import record
+from sidekick import record, fn
 
 
 def ply_parser(rules, tokens, start=None):
@@ -63,7 +63,7 @@ def make_parser(rules, tokens, start=None):
     """
     Alias to ply_parser.
     """
-    return ply_parser(rules, tokens, start=start)
+    return fn(ply_parser(rules, tokens, start=start))
 
 
 # Utility functions

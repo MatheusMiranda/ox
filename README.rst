@@ -1,4 +1,6 @@
-Ox is a simplified API to the excellent PLY library. 
+Ox is a simplified API to the excellent PLY_ library. 
+
+.. PLY: http://www.dabeaz.com/ply/
 
 
 Why Ox?
@@ -6,14 +8,15 @@ Why Ox?
 
 PLY is a powerful and reasonably efficient pure Python implementation of 
 Yacc/Bison. Its API is a little bit awkward from a Python point of view and it 
-does a lot of magic under the hood. Ox wraps main PLY functionality in an API
+does a lot of magic under the hood. Ox wraps main PLY functionality into an API
 that aims to be more explicit while still being easy to use. 
 
 It can be useful for production code, but just like PLY, it was created as a 
 tool for a introductory compilers course. One explicit goal of Ox is to make the
-boundaries of the different phases of compilation more sharp and to make each step
-more easily pluggable into each other. This pedagogical approach is often 
-not the most efficient or practical way to implement real compilers.
+boundaries of the different phases of compilation sharper and to make each step
+more easily pluggable into each other. This pedagogical approach is good for
+teaching but it is often not the most efficient or practical way to implement 
+real compilers.
  
  
 What about the name?
@@ -28,25 +31,25 @@ Usage
 =====
  
 Compilation is usually broken in a few steps:
- 
- 1) Tokenization/lexical analysis: a string of source code is broken into a 
-    list of tokens. In Ox, a lexer function is any function that receives a 
-    string input and return a list of tokens.
- 2) Parsing: the list of tokens is converted to a syntax tree. In Ox, the parser
-    function is usually derived from a grammar in BNF form. It receives a list
-    of tokens and outputs an arbitrary parse tree.
- 3) Semantic analysis: the parse tree is scanned for semantic errors (e.g. 
-    invalid variable names, invalid type signatures, etc). The parse tree is 
-    often converted to a different representation in this process.
- 4) Code optimization: many optimizations are applied in order to generate 
-    efficient internal representations. This is highly dependent on the source
-    language and on the target language and it tends to be the largest part of 
-    a parser in real compiler.
- 5) Code generation: the intermediate representation is used to emit code in the
-    target language. The target language is often a low level language such as
-    assembly or machine code. Nothing prevents us to emmit Python or Javascript,
-    however.   
- 
+
+1) Tokenization/lexical analysis: a string of source code is broken into a 
+   list of tokens. In Ox, a lexer function is any function that receives a 
+   string input and return a list of tokens.
+2) Parsing: the list of tokens is converted to a syntax tree. In Ox, the parser
+   function is usually derived from a grammar in BNF form. It receives a list
+   of tokens and outputs an arbitrary parse tree.
+3) Semantic analysis: the parse tree is scanned for semantic errors (e.g. 
+   invalid variable names, invalid type signatures, etc). The parse tree is 
+   often converted to a different representation in this process.
+4) Code optimization: many optimizations are applied in order to generate 
+   efficient internal representations. This is highly dependent on the source
+   language and on the target language and it tends to be the largest part of 
+   a parser in real compiler.
+5) Code generation: the intermediate representation is used to emit code in the
+   target language. The target language is often a low level language such as
+   assembly or machine code. Nothing prevents us to emmit Python or Javascript,
+   however.   
+
 Ox is mostly concerned with steps 1 and 2. The library may evolve in the future
 to steps 3 onwards, but they tend to be very application specific and usually
 a generic tool such as Ox do not offer much help.
@@ -113,11 +116,12 @@ The parser takes a list of tokens and convert it to an AST:
 
 
 The AST is easier to evaluate than the original string expression. We can
-write a simple evaluator as follows::
+write a simple evaluator as follows:
 
 .. code-block:: python
 
     import operator as op
+
     operations = {'+': op.add, '-': op.sub, '*': op.mul, '/': op.truediv}
     
     def eval(ast):
@@ -139,9 +143,9 @@ write a simple evaluator as follows::
         print('result:', value)
 
 The eval function receives an AST, but we can easily compose it with the other
-functions in order to accept string inputs. (We are using sidekick's pipeline
-operator to compose functions. It simply passes the output of each function
-to the input of the next function in the pipeline).
+functions in order to accept string inputs. (Ox functions understands sidekick's 
+pipeline operators to compose functions. The arrow operator ``>>`` simply passes 
+the output of each function to the input of the next function in the pipeline).
 
 >>> eval_input = lexer >> parser >> eval
 >>> eval_input('2 + 2 * 20')

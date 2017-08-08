@@ -50,7 +50,7 @@ setup(
     packages=find_packages('src'),
     install_requires=[
         'ply',
-        'sidekick',
+        'sidekick>=0.0.2',
     ],
     extras_require={
         'dev': [

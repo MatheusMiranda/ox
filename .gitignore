@@ -11,6 +11,7 @@ __pycache__/
 *.egg
 *.sqlite3
 .coverage
+.vscode/
 htmlcov/
 
 # Build directories

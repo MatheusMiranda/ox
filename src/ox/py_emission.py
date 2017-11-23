@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 Node = (
     opt.Number(1)
+    | opt.Boolean(1)
     | opt.Name(1)
     | opt.Add(2) 
     | opt.Mul(2) 
@@ -23,7 +24,7 @@ Node = (
 
     | opt.NameAttrib(2)
     | opt.Block(1)
-    | opt.ForBlock(4)
+    | opt.ForBlock(3)
     | opt.WhileBlock(2)
 
     | opt.IfBlock(2)
@@ -34,7 +35,7 @@ Node = (
     | opt.FunReturn(1)   
 )
 
-Number, Name = Node.Number, Node.Name 
+Number, Boolean, Name = Node.Number, Node.Boolean, Node.Name 
 
 Add, Mul, Div, Sub =  Node.Add, Node.Mul, Node.Div, Node.Sub
 
@@ -52,9 +53,9 @@ ForBlock, WhileBlock = Node.ForBlock, Node.WhileBlock
 
 IfBlock, ElifBlock, ElseBlock = Node.IfBlock, Node.ElifBlock, Node.ElseBlock
 
-FunCall = Node.FunCall
-
 FunDef, FunReturn = Node.FunDef, Node.FunReturn
+
+FunCall = Node.FunCall
 
 def source(ast):
     """
@@ -67,6 +68,7 @@ def source(ast):
 
 
 def visit(ctx, ast):
+
     if ast.number:
         x = str(ast.number_args[0])
         ctx.tokens.append(x)
@@ -98,7 +100,7 @@ def visit(ctx, ast):
         visit(ctx, y)
         ctx.tokens.append(')') 
 
-     elif ast.sub:
+    elif ast.sub:
         x, y = ast.sub_args
         ctx.tokens.append('(')
         visit(ctx, x)
@@ -107,10 +109,10 @@ def visit(ctx, ast):
         ctx.tokens.append(')') 
 
     elif ast.equal:
-            x, y = ast.equal_args
-            visit(ctx, x)
-            ctx.tokens.append(' == ')
-            visit(ctx, y)
+        x, y = ast.equal_args
+        visit(ctx, x)
+        ctx.tokens.append(' == ')
+        visit(ctx, y)
 
     elif ast.notequal:
         x, y = ast.notequal_args
@@ -143,10 +145,10 @@ def visit(ctx, ast):
         visit(ctx, y)  
 
     elif ast.andop:
-            x, y = ast.andop_args
-            visit(ctx, x)
-            ctx.tokens.append(' and ')
-            visit(ctx, y)
+        x, y = ast.andop_args
+        visit(ctx, x)
+        ctx.tokens.append(' and ')
+        visit(ctx, y)
 
     elif ast.orop:
         x, y = ast.orop_args
@@ -155,20 +157,21 @@ def visit(ctx, ast):
         visit(ctx, y)
 
     elif ast.notop:
-            x = ast.notop_args
-            ctx.tokens.append(' not ')
-            visit(ctx, x)
-
+        x = ast.notop_args
+        ctx.tokens.append(' not ')
+        visit(ctx, x)
+    
     elif ast.nameattrib:
         x, y = ast.nameattrib_args
         ctx.tokens.append(x)
         ctx.tokens.append(' = ')
-        visit(ctx, y)    
+        visit(ctx, y)
 
     elif ast.block:
         block = ast.block_args[0]
         if not block:
-            block.append(Name('pass'))        
+            block.append(Name('pass'))
+
         for node in block:
             ctx.tokens.append('    ' * ctx.indent)
             visit(ctx, node)
@@ -190,7 +193,7 @@ def visit(ctx, ast):
         ctx.tokens.append('    ' * ctx.indent)
         ctx.tokens.append('while (')
         visit(ctx, condition)
-        ctx.tokens.append(') :\n')
+        ctx.tokens.append('):\n')
         ctx.indent += 1
         visit(ctx, block)
         ctx.indent -= 1
@@ -222,11 +225,12 @@ def visit(ctx, ast):
         ctx.tokens.append('    ' * ctx.indent)
         ctx.tokens.append('elif ')
         visit(ctx, condition)
-        ctx.tokens.append('\n')
+        ctx.tokens.append(':\n')
         ctx.indent += 1
         visit(ctx, block)
         ctx.indent -= 1
         ctx.tokens.append('    ' * ctx.indent)
+        ctx.tokens.append(':\n')
 
     elif ast.funcall:
             ...
@@ -246,9 +250,9 @@ expr1 = NameAttrib('x', Add(Name('x'), Number(1)))
 expr2 = NameAttrib('y', Number(42))
 block = Block([expr1, expr2])
 expr3 = IfBlock(OrOp(AndOp(Equal(Name('x'), Number(2)), Equal(Name('y'), Number(10))),\
- AndOp(Equal(Name('x'), Number(2)), Equal(Name('y'), Number(10)))), block)
+    AndOp(Equal(Name('x'), Number(2)), Equal(Name('y'), Number(10)))), block)
 
-expr = ForBlock(NameAttrib('i', Number(0)), Name('i < 10'), Name('i++'), expr3)
+expr = ForBlock(Name('x'), Name('L'), block)
 
-print(expr)
-print(source(expr) + '\n' + source(expr))
+
+print(source(expr3))

@@ -9,6 +9,7 @@ Node = (
     | opt.Mul(2)
     | opt.Div(2)
     | opt.Sub(2)
+    | opt.FunCall(2)
 
     | opt.Equal(2)
     | opt.NotEqual(2)
@@ -21,6 +22,8 @@ Node = (
     | opt.OrOp(2)
     | opt.NotOp(1)
 
+## ----
+
     | opt.NameAttrib(2)
     | opt.Block(1)
     | opt.ForBlock(4)
@@ -30,9 +33,11 @@ Node = (
     | opt.IfBlock(2)
     | opt.ElseIfBlock(2)
     | opt.ElseBlock(1)
-    | opt.FunCall(2)
+
     | opt.FunDef(3)
     | opt.FunReturn(1)
+    | opt.Arg(2)
+    | opt.FunArg(1)
 )
 
 Number, Boolean, Name = Node.Number, Node.Boolean, Node.Name
@@ -57,212 +62,255 @@ IfBlock, ElseIfBlock, ElseBlock = \
 
 FunDef, FunReturn = Node.FunDef, Node.FunReturn
 
+FunArg = Node.FunArg
+Arg = Node.Arg
+
 FunCall = Node.FunCall
+
+context = SimpleNamespace(tokens=[], indent=0)
 
 def source(ast):
     """
     Emite código em JavaScript a partir da árvore sintática
     """
 
-    ctx = SimpleNamespace(tokens=[], indent=0)
-    visit(ctx, ast)
-    return ''.join(ctx.tokens)
+    visit(context, ast)
+    return ''.join(context.tokens)
 
+def visit(context, ast):
 
-def visit(ctx, ast):
+    match_function = Node.match_fn(**methods)
+    match_function(ast)
 
-        if ast.number:
-            x = str(ast.number_args[0])
-            ctx.tokens.append(x)
+class Options:
 
-        elif ast.name:
-            ctx.tokens.append(ast.name_args[0])
+    def __init__(self, context):
+        self.context = context
 
-        elif ast.add:
-            x, y = ast.add_args
-            ctx.tokens.append('(')
-            visit(ctx, x)
-            ctx.tokens.append(' + ')
-            visit(ctx, y)
-            ctx.tokens.append(')')
+    # Arithmetic operators
 
-        elif ast.mul:
-            x, y = ast.mul_args
-            ctx.tokens.append('(')
-            visit(ctx, x)
-            ctx.tokens.append(' * ')
-            visit(ctx, y)
-            ctx.tokens.append(')')
+    def number(self, value):
+        context.tokens.append(str(value))
 
-        elif ast.div:
-            x, y = ast.div_args
-            ctx.tokens.append('(')
-            visit(ctx, x)
-            ctx.tokens.append(' / ')
-            visit(ctx, y)
-            ctx.tokens.append(')')
+    def name(self, word):
+        context.tokens.append(word)
 
-        elif ast.sub:
-            x, y = ast.sub_args
-            ctx.tokens.append('(')
-            visit(ctx, x)
-            ctx.tokens.append(' - ')
-            visit(ctx, y)
-            ctx.tokens.append(')')
+    def boolean(self, condition):
+        ...
 
-        elif ast.equal:
-            x, y = ast.equal_args
-            visit(ctx, x)
-            ctx.tokens.append(' == ')
-            visit(ctx, y)
+    def add(self, first_argument, second_argument):
+        context.tokens.append('(')
+        visit(context, first_argument)
+        context.tokens.append(' + ')
+        visit(context, second_argument)
+        context.tokens.append(')')
 
-        elif ast.notequal:
-            x, y = ast.notequal_args
-            visit(ctx, x)
-            ctx.tokens.append(' != ')
-            visit(ctx, y)
+    def sub(self, first_argument, second_argument):
+        context.tokens.append('(')
+        visit(context, first_argument)
+        context.tokens.append(' - ')
+        visit(context, second_argument)
+        context.tokens.append(')')
 
-        elif ast.greaterthan:
-            x, y = ast.greaterthan_args
-            visit(ctx, x)
-            ctx.tokens.append(' > ')
-            visit(ctx, y)
+    def mul(self, first_argument, second_argument):
+        context.tokens.append('(')
+        visit(context, first_argument)
+        context.tokens.append(' * ')
+        visit(context, second_argument)
+        context.tokens.append(')')
 
-        elif ast.lessthan:
-            x, y = ast.lessthan_args
-            visit(ctx, x)
-            ctx.tokens.append(' < ')
-            visit(ctx, y)
+    def div(self, first_argument, second_argument):
+        context.tokens.append('(')
+        visit(context, first_argument)
+        context.tokens.append(' / ')
+        visit(context, second_argument)
+        context.tokens.append(')')
 
-        elif ast.greaterequal:
-            x, y = ast.greaterequal_args
-            visit(ctx, x)
-            ctx.tokens.append(' >= ')
-            visit(ctx, y)
+    # Comparison operators
 
-        elif ast.lessequal:
-            x, y = ast.lessequal_args
-            visit(ctx, x)
-            ctx.tokens.append(' <= ')
-            visit(ctx, y)
+    def equal(self, first_argument, second_argument):
+        visit(context, first_argument)
+        context.tokens.append(' == ')
+        visit(context, second_argument)
 
-        elif ast.andop:
-            x, y = ast.andop_args
-            visit(ctx, x)
-            ctx.tokens.append(' && ')
-            visit(ctx, y)
+    def notequal(self, first_argument, second_argument):
+        visit(context, first_argument)
+        context.tokens.append(' != ')
+        visit(context, second_argument)
 
-        elif ast.orop:
-            x, y = ast.orop_args
-            visit(ctx, x)
-            ctx.tokens.append(' || ')
-            visit(ctx, y)
+    def greaterthan(self, first_argument, second_argument):
+        visit(context, first_argument)
+        context.tokens.append(' > ')
+        visit(context, second_argument)
 
-        elif ast.notop:
-            x = ast.notop_args
-            ctx.tokens.append('!')
-            visit(ctx, x)
+    def lessthan(self, first_argument, second_argument):
+        visit(context, first_argument)
+        context.tokens.append(' < ')
+        visit(context, second_argument)
 
-        elif ast.nameattrib:
-            x, y = ast.nameattrib_args
-            ctx.tokens.append(x)
-            ctx.tokens.append(' = ')
-            visit(ctx, y)
+    def greaterequal(self, first_argument, second_argument):
+        visit(context, first_argument)
+        context.tokens.append(' >= ')
+        visit(context, second_argument)
 
-        elif ast.block:
-            block = ast.block_args[0]
-            if not block:
-                block.append(Name('pass'))
+    def lessequal(self, first_argument, second_argument):
+        visit(context, first_argument)
+        context.tokens.append(' <= ')
+        visit(context, second_argument)
 
-            for node in block:
-                ctx.tokens.append('    ' * ctx.indent)
-                visit(ctx, node)
-                ctx.tokens.append(';\n')
+    #
 
-        elif ast.forblock:
-            counter, condition, iterable, block = ast.forblock_args
-            ctx.tokens.append('    ' * ctx.indent)
-            ctx.tokens.append('for (')
-            visit(ctx, counter)
-            ctx.tokens.append('; ')
-            visit(ctx, condition)
-            ctx.tokens.append('; ')
-            visit(ctx, iterable)
-            ctx.tokens.append(') {\n')
-            ctx.indent += 1
-            visit(ctx, block)
-            ctx.indent -= 1
-            ctx.tokens.append('}\n')
+    def andop(self, first_argument, second_argument):
+        visit(context, first_argument)
+        context.tokens.append(' && ')
+        visit(context, second_argument)
 
-        elif ast.whileblock:
-            condition, block = ast.whileblock_args
-            ctx.tokens.append('    ' * ctx.indent)
-            ctx.tokens.append('while (')
-            visit(ctx, condition)
-            ctx.tokens.append(') {\n')
-            ctx.indent += 1
-            visit(ctx, block)
-            ctx.indent -= 1
-            ctx.tokens.append('    ' * ctx.indent)
-            ctx.tokens.append('}\n')
+    def orop(self, first_argument, second_argument):
+        visit(context, first_argument)
+        context.tokens.append(' || ')
+        visit(context, second_argument)
 
-        elif ast.dowhileblock:
-            block, condition = ast.dowhileblock_args
-            ctx.tokens.append('    ' * ctx.indent)
-            ctx.tokens.append('do {\n')
-            ctx.indent += 1
-            visit(ctx, block)
-            ctx.indent -= 1
-            ctx.tokens.append('    ' * ctx.indent)
-            ctx.tokens.append('} while (')
-            visit(ctx, condition)
-            ctx.tokens.append(');')
+    def notop(self, first_argument, second_argument):
+        context.tokens.append('!')
+        visit(context, first_argument)
 
-        elif ast.ifblock:
-            condition, block = ast.ifblock_args
-            ctx.tokens.append('    ' * ctx.indent)
-            ctx.tokens.append('if (')
-            visit(ctx, condition)
-            ctx.tokens.append(') {\n')
-            ctx.indent += 1
-            visit(ctx, block)
-            ctx.indent -= 1
-            ctx.tokens.append('    ' * ctx.indent)
-            ctx.tokens.append('}\n')
+    #
 
-        elif ast.elseblock:
-            block = ast.ifblock_args
-            ctx.tokens.append('    ' * ctx.indent)
-            ctx.tokens.append('else {\n')
-            ctx.indent += 1
-            visit(ctx, block)
-            ctx.indent -= 1
-            ctx.tokens.append('    ' * ctx.indent)
-            ctx.tokens.append('}\n')
+    def nameattrib(self, first_argument, second_argument):
+        context.tokens.append(first_argument)
+        context.tokens.append(' = ')
+        visit(context, second_argument)
 
-        elif ast.elseifblock:
-            condition, block = ast.elseifblock_args
-            ctx.tokens.append('    ' * ctx.indent)
-            ctx.tokens.append('else if (')
-            visit(ctx, condition)
-            ctx.tokens.append(') {\n')
-            ctx.indent += 1
-            visit(ctx, block)
-            ctx.indent -= 1
-            ctx.tokens.append('    ' * ctx.indent)
-            ctx.tokens.append('}\n')
+    #
 
-        elif ast.funcall:
-            ...
+    def block(self, block):
+        if not block:
+            block.append(Name('pass'))
 
-        elif ast.fundef:
-            ...
+        for node in block:
+            context.tokens.append('    ' * context.indent)
+            visit(context, node)
+            context.tokens.append(';\n')
 
-        elif ast.funreturn:
-            ...
+    #
 
-        else:
-            raise ValueError('node is not supported: %s' % ast)
+    def forblock(self, counter, condition, iterable, block):
+        context.tokens.append('    ' * context.indent)
+        context.tokens.append('for (')
+        visit(context, counter)
+        context.tokens.append('; ')
+        visit(context, condition)
+        context.tokens.append('; ')
+        visit(context, iterable)
+        context.tokens.append(') {\n')
+        context.indent += 1
+        visit(context, block)
+        context.indent -= 1
+        context.tokens.append('}\n')
+
+    def whileblock(self, condition, block):
+        context.tokens.append('    ' * context.indent)
+        context.tokens.append('while (')
+        visit(context, condition)
+        context.tokens.append(') {\n')
+        context.indent += 1
+        visit(context, block)
+        context.indent -= 1
+        context.tokens.append('    ' * context.indent)
+        context.tokens.append('}\n')
+
+    def dowhileblock(self, block, condition):
+        context.tokens.append('    ' * context.indent)
+        context.tokens.append('do {\n')
+        context.indent += 1
+        visit(context, block)
+        context.indent -= 1
+        context.tokens.append('    ' * context.indent)
+        context.tokens.append('} while (')
+        visit(context, condition)
+        context.tokens.append(');')
+
+    #
+
+    def ifblock(self, condition, block):
+        context.tokens.append('    ' * context.indent)
+        context.tokens.append('if (')
+        visit(context, condition)
+        context.tokens.append(') {\n')
+        context.indent += 1
+        visit(context, block)
+        context.indent -= 1
+        context.tokens.append('    ' * context.indent)
+        context.tokens.append('}\n')
+
+    def elseblock(self, block):
+        context.tokens.append('    ' * context.indent)
+        context.tokens.append('else {\n')
+        context.indent += 1
+        visit(context, block)
+        context.indent -= 1
+        context.tokens.append('    ' * context.indent)
+        context.tokens.append('}\n')
+
+    def elseifblock(self, condition, block):
+        context.tokens.append('    ' * context.indent)
+        context.tokens.append('else if (')
+        visit(context, condition)
+        context.tokens.append(') {\n')
+        context.indent += 1
+        visit(context, block)
+        context.indent -= 1
+        context.tokens.append('    ' * context.indent)
+        context.tokens.append('}\n')
+
+    #
+
+    def funarg(self, arguments):
+        if not arguments:
+            block.append(Name('pass'))
+
+        counter = 0;
+
+        for node in arguments:
+            visit(context, node)
+
+            if(counter >= 0 and counter < len(arguments) - 1):
+                context.tokens.append(', ')
+
+            counter += 1;
+
+    def arg(self, type_attribute, name):
+        context.tokens.append(type_attribute + ' ' + name)
+
+    #
+
+    def fundef(self, function_name, arguments, block):
+        context.tokens.append('function ')
+        visit(context, function_name)
+        context.tokens.append('(')
+        visit(context, arguments)
+        context.tokens.append(') {\n')
+        context.indent += 1
+        visit(context, block)
+        context.indent -= 1
+        context.tokens.append('}\n')
+
+    def funcall(self, function_name, arguments):
+        ...
+    def funreturn(self, type_return):
+        ...
+
+    # def _not_implemented(self, *args):
+    #     return NotImplemented
+    #
+    # error = _not_implemented
+
+options = Options(context)
+functions_in_Options = [func for func in dir(Options) if not func.startswith('_')]
+methods = {option: getattr(options, option) for option in functions_in_Options}
+
+# options = Options(context)
+
 
 expr1 = NameAttrib('x', Add(Name('x'), Number(1)))
 expr2 = NameAttrib('y', Number(42))
@@ -270,7 +318,17 @@ block = Block([expr1, expr2])
 expr3 = IfBlock(OrOp(AndOp(Equal(Name('x'), Number(2)), Equal(Name('y'), Number(10))),\
  AndOp(Equal(Name('x'), Number(2)), Equal(Name('y'), Number(10)))), block)
 
-expr = ForBlock(NameAttrib('i', Number(0)), Name('i < 10'), Name('i++'), expr3)
+
+teste1 = Arg('int', 't1')
+teste2 = Arg('int', 't2')
+
+expr = FunDef(Name('teste'), FunArg([teste1, teste2]), block)
+
+# expr = Name('x')
+# expr = ForBlock(NameAttrib('i', Number(0)), Name('i < 10'), Name('i++'), Block([expr2]))
+
+
+
 
 print(expr)
-print(source(expr) + '\n' + source(expr))
+print(source(expr))

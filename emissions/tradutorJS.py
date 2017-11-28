@@ -29,6 +29,7 @@ Node = (
     | opt.ForBlock(4)
     | opt.WhileBlock(2)
     | opt.DoWhileBlock(2)
+    | opt.SimpleStatement(1)
 
     | opt.IfBlock(2)
     | opt.ElseIfBlock(2)
@@ -66,6 +67,8 @@ FunArg = Node.FunArg
 Arg = Node.Arg
 
 FunCall = Node.FunCall
+
+SimpleStatement = Node.SimpleStatement
 
 context = SimpleNamespace(tokens=[], indent=0)
 
@@ -190,7 +193,6 @@ class Options:
         for node in block:
             context.tokens.append('    ' * context.indent)
             visit(context, node)
-            context.tokens.append(';\n')
 
     #
 
@@ -228,7 +230,7 @@ class Options:
         context.tokens.append('    ' * context.indent)
         context.tokens.append('} while (')
         visit(context, condition)
-        context.tokens.append(');')
+        context.tokens.append(')')
 
     #
 
@@ -280,7 +282,7 @@ class Options:
             counter += 1;
 
     def arg(self, type_attribute, name):
-        context.tokens.append(type_attribute + ' ' + name)
+        context.tokens.append(name)
 
     #
 
@@ -296,9 +298,18 @@ class Options:
         context.tokens.append('}\n')
 
     def funcall(self, function_name, arguments):
-        ...
-    def funreturn(self, type_return):
-        ...
+        visit(context, function_name)
+        context.tokens.append('(')
+        visit(context, arguments)
+        context.tokens.append(')')
+
+    def funreturn(self, _return):
+        context.tokens.append('return ')
+        visit(context, _return)
+
+    def simplestatement(self, statement):
+        visit(context, statement)
+        context.tokens.append(';\n')
 
     # def _not_implemented(self, *args):
     #     return NotImplemented
@@ -311,10 +322,13 @@ methods = {option: getattr(options, option) for option in functions_in_Options}
 
 # options = Options(context)
 
+returnf = SimpleStatement(FunReturn(Add(Number(2), Number(40))))
 
-expr1 = NameAttrib('x', Add(Name('x'), Number(1)))
-expr2 = NameAttrib('y', Number(42))
-block = Block([expr1, expr2])
+expr1 = SimpleStatement(NameAttrib('x', Add(Name('x'), Number(1))))
+expr2 = SimpleStatement(NameAttrib('y', Number(42)))
+
+block = Block([expr1, expr2, returnf])
+
 expr3 = IfBlock(OrOp(AndOp(Equal(Name('x'), Number(2)), Equal(Name('y'), Number(10))),\
  AndOp(Equal(Name('x'), Number(2)), Equal(Name('y'), Number(10)))), block)
 
@@ -323,12 +337,10 @@ teste1 = Arg('int', 't1')
 teste2 = Arg('int', 't2')
 
 expr = FunDef(Name('teste'), FunArg([teste1, teste2]), block)
-
-# expr = Name('x')
 # expr = ForBlock(NameAttrib('i', Number(0)), Name('i < 10'), Name('i++'), Block([expr2]))
+# expr = FunCall(Name('teste'), FunArg([teste1, teste2]))
 
-
-
+# expr = ForBlock(NameAttrib('i', Number(0)), Name('i < 10'), Name('i++'), SimpleStatement(Block([expr2])))
 
 print(expr)
 print(source(expr))

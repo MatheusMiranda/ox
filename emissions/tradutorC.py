@@ -358,7 +358,7 @@ fibonacci_call = SimpleStatement(FunCall(Name('fibonacci'), FunArg([argument])))
 
 _print = SimpleStatement(FunCall(Name('printf'), FunArg([Name('"%d\\n" , fib[i]')])))
 main_arguments = Arg(Name(''), Name(''))
-main_block = ForBlock(NameAttrib(Name('i'), Number('0')), Name('i < 10'), Name('i++'), Block([fibonacci_call, _print]))
+main_block = ForBlock(NameAttrib(Name('i'), Number('1')), Name('i < 10'), Name('i++'), Block([fibonacci_call, _print]))
 main = FunDef(Type(Name('int')), Name('main'), FunArg([main_arguments]), Block([main_block]))
 
 ast = [memory, fibonacci, main]

@@ -77,6 +77,9 @@ SimpleStatement = Node.SimpleStatement
 
 context = SimpleNamespace(tokens=[], indent=0)
 
+# Including libraries
+context.tokens.append('#include <stdio.h>\n#include <stdlib.h>\n\n')
+
 def source(ast):
     """
     Emite código em JavaScript a partir da árvore sintática
@@ -88,6 +91,7 @@ def source(ast):
     return ''.join(context.tokens)
 
 def visit(context, ast):
+
     match_function = Node.match_fn(**methods)
     match_function(ast)
 
@@ -105,14 +109,15 @@ class Options:
         context.tokens.append(word)
 
     def type(self, _type):
-        context.tokens.append(_type)
+        visit(context, _type)
 
     def variable(self, _type, variable_name):
-        context.tokens.append('var ')
+        visit(context, _type)
+        context.tokens.append(' ')
         visit(context, variable_name)
 
     def boolean(self, condition):
-        context.tokens.append(condition)
+        ...
 
     def add(self, first_argument, second_argument):
         context.tokens.append('(')
@@ -193,7 +198,7 @@ class Options:
     #
 
     def nameattrib(self, first_argument, second_argument):
-        context.tokens.append(first_argument)
+        visit(context, first_argument)
         context.tokens.append(' = ')
         visit(context, second_argument)
 
@@ -210,7 +215,6 @@ class Options:
     #
 
     def forblock(self, counter, condition, iterable, block):
-        context.tokens.append('    ' * context.indent)
         context.tokens.append('for (')
         visit(context, counter)
         context.tokens.append('; ')
@@ -221,10 +225,10 @@ class Options:
         context.indent += 1
         visit(context, block)
         context.indent -= 1
+        context.tokens.append('    ' * context.indent)
         context.tokens.append('}\n')
 
     def whileblock(self, condition, block):
-        context.tokens.append('    ' * context.indent)
         context.tokens.append('while (')
         visit(context, condition)
         context.tokens.append(') {\n')
@@ -235,7 +239,6 @@ class Options:
         context.tokens.append('}\n')
 
     def dowhileblock(self, block, condition):
-        context.tokens.append('    ' * context.indent)
         context.tokens.append('do {\n')
         context.indent += 1
         visit(context, block)
@@ -248,7 +251,6 @@ class Options:
     #
 
     def ifblock(self, condition, block):
-        context.tokens.append('    ' * context.indent)
         context.tokens.append('if (')
         visit(context, condition)
         context.tokens.append(') {\n')
@@ -259,7 +261,6 @@ class Options:
         context.tokens.append('}\n')
 
     def elseblock(self, block):
-        context.tokens.append('    ' * context.indent)
         context.tokens.append('else {\n')
         context.indent += 1
         visit(context, block)
@@ -268,7 +269,6 @@ class Options:
         context.tokens.append('}\n')
 
     def elseifblock(self, condition, block):
-        context.tokens.append('    ' * context.indent)
         context.tokens.append('else if (')
         visit(context, condition)
         context.tokens.append(') {\n')
@@ -295,12 +295,15 @@ class Options:
             counter += 1;
 
     def arg(self, type_attribute, name):
-        context.tokens.append(name)
+        visit(context, type_attribute)
+        context.tokens.append(' ')
+        visit(context, name)
 
     #
 
     def fundef(self, type_return, function_name, arguments, block):
-        context.tokens.append('function ')
+        visit(context, type_return)
+        context.tokens.append(' ')
         visit(context, function_name)
         context.tokens.append('(')
         visit(context, arguments)
@@ -308,7 +311,7 @@ class Options:
         context.indent += 1
         visit(context, block)
         context.indent -= 1
-        context.tokens.append('}\n\n')
+        context.tokens.append('}\n')
 
     def funcall(self, function_name, arguments):
         visit(context, function_name)
@@ -333,27 +336,31 @@ options = Options(context)
 functions_in_Options = [func for func in dir(Options) if not func.startswith('_')]
 methods = {option: getattr(options, option) for option in functions_in_Options}
 
-# options = Options(context)
+# Building a example that calculates a fibonacci number
 
-returnf = SimpleStatement(FunReturn(Add(Number(2), Number(40))))
+memory = SimpleStatement(Variable(Type(Name('int')), Name('fib[65000]')))
 
-expr1 = SimpleStatement(NameAttrib('x', Add(Name('x'), Number(1))))
-expr2 = SimpleStatement(NameAttrib('y', Number(42)))
+fibonacci_arguments = Arg(Type(Name('int')), Name('n'))
 
-block = Block([expr1, expr2, returnf])
+fibonacci_first_if = IfBlock(Equal(Name('n'), Number('1')), Block([SimpleStatement(NameAttrib(Name('fib[n]'), Number('1')))]))
+fibonacci_second_if = IfBlock(Equal(Name('n'), Number('2')), Block([SimpleStatement(NameAttrib(Name('fib[n]'), Number('1')))]))
+fibonacci_else = ElseBlock(Block([SimpleStatement(NameAttrib(Name('fib[n]'), \
+    Add(Name('fib[n-1]'), Name('fib[n-2]'))))]))
 
-expr3 = IfBlock(OrOp(AndOp(Equal(Name('x'), Number(2)), Equal(Name('y'), Number(10))),\
- AndOp(Equal(Name('x'), Number(2)), Equal(Name('y'), Number(10)))), block)
+fibonacci_block = Block([fibonacci_first_if, fibonacci_second_if, fibonacci_else])
 
+fibonacci = FunDef(Type(Name('void')), Name('fibonacci'), FunArg([fibonacci_arguments]), \
+    fibonacci_block)
 
-teste1 = Arg('int', 't1')
-teste2 = Arg('int', 't2')
+argument = Arg(Name(''), Name('i'))
 
-expr = [FunDef(Type(''), Name('teste'), FunArg([teste1, teste2]), block), FunDef(Type(''), Name('main'), FunArg([Arg('', '')]), block)]
-# expr = ForBlock(NameAttrib('i', Number(0)), Name('i < 10'), Name('i++'), Block([expr2]))
-# expr = FunCall(Name('teste'), FunArg([teste1, teste2]))
+fibonacci_call = SimpleStatement(FunCall(Name('fibonacci'), FunArg([argument])))
 
-# expr = ForBlock(NameAttrib('i', Number(0)), Name('i < 10'), Name('i++'), SimpleStatement(Block([expr2])))
+_print = SimpleStatement(FunCall(Name('printf'), FunArg([Name('"%d\\n" , fib[i]')])))
+main_arguments = Arg(Name(''), Name(''))
+main_block = ForBlock(NameAttrib(Name('i'), Number('0')), Name('i < 10'), Name('i++'), Block([fibonacci_call, _print]))
+main = FunDef(Type(Name('int')), Name('main'), FunArg([main_arguments]), Block([main_block]))
 
-print(expr)
-print(source(expr))
+ast = [memory, fibonacci, main]
+
+print(source(ast))
